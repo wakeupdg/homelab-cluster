@@ -8,6 +8,49 @@
 - **Overlay Network Fabric:** Tailscale WireGuard Mesh (`tailscale0`, MagicDNS `*.homelab.ts.net`)
 - **Container Orchestrator:** K3s Lightweight Kubernetes (Single-Server SQLite/etcd on NVMe + Multi-Arch Agents)
 
+## Summary
+
+**homelab-cluster is a private cloud that runs at home.** It uses one Raspberry Pi 5 and old laptops and desktops. Together, these machines do work that you usually pay cloud services to do. Your files, your code and your AI stay on hardware that you own.
+
+### What it does
+
+| You want to… | Usual paid service | In this system |
+| :--- | :--- | :--- |
+| Store and share files | Dropbox, Google Drive | Nextcloud, Filebrowser |
+| Save and search photos | Google Photos, iCloud Photos | Immich |
+| Store code and run automatic tests | GitHub, GitHub Actions | Forgejo, act_runner |
+| Use AI models for chat and code help | ChatGPT, OpenAI API | Private AI gateway with open models |
+
+- **Private access from anywhere.** All machines connect through Tailscale, a private and encrypted network. Only your approved devices can connect.
+- **Works with your AI tools.** The AI gateway uses the same format as the OpenAI API. To connect most AI apps and code tools, change the server address in their settings.
+
+### How it works
+
+- **The Raspberry Pi 5 is the main computer.** It is always on. It keeps all data on a 2 TB SSD and sends work to the other machines.
+- **Old laptops and desktops are the workers.** They do the heavy work: AI answers, photo search and code builds. If a worker stops, no data is lost.
+- **Workers wake when work arrives.** If the AI machines are asleep, the system wakes them. The first answer can then take up to one minute.
+
+### What comes next
+
+The first version gives you storage, code tools and AI. Later, the system will become one home for all of my projects:
+
+- **Run all my projects.** Websites, apps, APIs and databases run on the cluster, not on paid hosts.
+- **Cloud tests, sized to the hardware.** Each code change can start automatic tests and a preview copy of the project. The size of these tests depends on the power of the cluster at that time.
+- **Larger AI models.** Several machines can share one large model. This makes bigger models possible, but they are slower than paid AI services.
+- **More hardware over time.** Any spare computer can join as a worker. Each new machine adds power and memory.
+- **Public access when necessary.** At first, only approved devices can connect. Later, you can make selected projects public.
+
+### Limits
+
+- The system is only as powerful as the hardware in it. It is not as fast as a large paid cloud.
+- The memory of the workers limits the size of the AI models.
+- A power failure at home stops the system. An internet failure stops access from outside the home.
+
+### Where to read next
+
+- **Business owners:** This summary is all you need.
+- **Developers:** Read [Section 6](#6-core-workload-modules-phased-rollout) for the services, [Section 1](#1-repository--directory-structure-for-claude-code) for the file layout and [Section 7](#7-implementation-roadmap--task-breakdown-for-claude-code) for the build steps.
+
 ## 1. Repository & Directory Structure for Claude Code
 
 Claude Code MUST initialize and populate the following exact monorepo file tree at the repository root (`homelab-cluster/`). Every file path listed below is mandatory and must contain deterministic, production-ready code with zero placeholder stubs.
