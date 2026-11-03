@@ -12,6 +12,7 @@
 
 Claude Code MUST initialize and populate the following exact monorepo file tree at the repository root (`homelab-cluster/`). Every file path listed below is mandatory and must contain deterministic, production-ready code with zero placeholder stubs.
 
+```text
 homelab-cluster/
 ├── .env.example                                  # Template environment variables (Tailscale keys, UUIDs, MACs, IPs)
 ├── Makefile                                      # Unified CLI entrypoint for bootstrapping, linting, and verification
@@ -97,6 +98,7 @@ homelab-cluster/
     └── hardware/
         ├── bom-and-thermals.md                   # Complete Bill of Materials, power budget, and vertical rack thermal design
         └── bios-wol-matrix.md                    # Vendor-specific BIOS/UEFI settings for Dell, Lenovo, HP, and Apple hardware
+```
 
 ## 2. Phase 1: Physical Hardware & Base OS Provisioning (The Control Plane)
 
@@ -115,24 +117,30 @@ homelab-cluster/
 * **PCIe Gen 3 & Fan Curve Enablement (`/boot/firmware/config.txt`):**
   Append the following exact lines to `/boot/firmware/config.txt`:
 
-dtparam=pciex1
-dtparam=pciex1_gen=3
-dtparam=cooling_fan=on
-dtparam=fan_temp0=50000,fan_temp0_hyst=5000,fan_temp0_speed=75
-dtparam=fan_temp1=60000,fan_temp1_hyst=5000,fan_temp1_speed=150
-dtparam=fan_temp2=67500,fan_temp2_hyst=5000,fan_temp2_speed=255
-dtoverlay=disable-wifi
-dtoverlay=disable-bt
+  ```ini
+  dtparam=pciex1
+  dtparam=pciex1_gen=3
+  dtparam=cooling_fan=on
+  dtparam=fan_temp0=50000,fan_temp0_hyst=5000,fan_temp0_speed=75
+  dtparam=fan_temp1=60000,fan_temp1_hyst=5000,fan_temp1_speed=150
+  dtparam=fan_temp2=67500,fan_temp2_hyst=5000,fan_temp2_speed=255
+  dtoverlay=disable-wifi
+  dtoverlay=disable-bt
+  ```
 
 * **Kernel Cgroups & Memory Accounting (`/boot/firmware/cmdline.txt`):**
   Ensure `/boot/firmware/cmdline.txt` is a single line containing:
 
-console=serial0,115200 console=tty1 root=PARTUUID=<ROOT_PARTUUID> rootfstype=ext4 fsck.repair=yes rootwait quiet cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory swapaccount=1
+  ```text
+  console=serial0,115200 console=tty1 root=PARTUUID=<ROOT_PARTUUID> rootfstype=ext4 fsck.repair=yes rootwait quiet cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory swapaccount=1
+  ```
 
 * **Deterministic NVMe Partitioning & `/etc/fstab` Mount:**
   Format `/dev/nvme0n1p1` as `ext4` (`mkfs.ext4 -L HOMELAB_NVME -m 1 -E lazy_itable_init=0,lazy_journal_init=0 /dev/nvme0n1p1`), retrieve its UUID via `blkid -s UUID -o value /dev/nvme0n1p1`, create `/mnt/nvme`, and append to `/etc/fstab`:
 
-UUID=<NVME_UUID>  /mnt/nvme  ext4  defaults,noatime,nodiratime,nofail,commit=60,errors=remount-ro  0  2
+  ```text
+  UUID=<NVME_UUID>  /mnt/nvme  ext4  defaults,noatime,nodiratime,nofail,commit=60,errors=remount-ro  0  2
+  ```
 
 * **NVMe Swapfile & Kernel `sysctl` Tuning:**
   Disable microSD swap and allocate an 8GB swapfile on `/mnt/nvme/swapfile` (`sw,pri=10` in `/etc/fstab`). Populate `/etc/sysctl.d/99-homelab-k3s.conf` with `vm.swappiness=10`, `vm.vfs_cache_pressure=50`, `vm.overcommit_memory=1`, `net.ipv4.ip_forward=1`, `net.ipv6.conf.all.forwarding=1`, `net.bridge.bridge-nf-call-iptables=1`, `fs.inotify.max_user_instances=8192`, and `fs.inotify.max_user_watches=524288`.
@@ -157,8 +165,11 @@ Create `/mnt/nvme/{k3s,nfs/shared,nfs/models,nfs/k8s-pvs,samba/cloud,minio/data,
 ### 3.3 Battery Protection ("Spicy Pillow" Prevention)
 * **TLP (`/etc/tlp.d/00-homelab-battery.conf`):** Set `START_CHARGE_THRESH_BAT0=50`, `STOP_CHARGE_THRESH_BAT0=80`, `START_CHARGE_THRESH_BAT1=50`, `STOP_CHARGE_THRESH_BAT1=80`, `CPU_ENERGY_PERF_POLICY_ON_AC=balance_performance`, `USB_AUTOSUSPEND=0`.
 * **Kernel `sysfs` Udev Rule (`/etc/udev/rules.d/99-battery-threshold.rules`):**
-  `SUBSYSTEM=="power_supply", KERNEL=="BAT[0-9]", ATTR{charge_control_start_threshold}=="*", ATTR{charge_control_start_threshold}="50"`
-  `SUBSYSTEM=="power_supply", KERNEL=="BAT[0-9]", ATTR{charge_control_end_threshold}=="*", ATTR{charge_control_end_threshold}="80"`
+
+  ```text
+  SUBSYSTEM=="power_supply", KERNEL=="BAT[0-9]", ATTR{charge_control_start_threshold}=="*", ATTR{charge_control_start_threshold}="50"
+  SUBSYSTEM=="power_supply", KERNEL=="BAT[0-9]", ATTR{charge_control_end_threshold}=="*", ATTR{charge_control_end_threshold}="80"
+  ```
 
 ### 3.4 Physical Enclosure, Thermal Specs & BOM
 * Mount laptops vertically in an anodized aluminum stand with a 15mm silicone lid spacer (hinges facing upward for natural convection exhaust) cooled by dual 120mm 5V USB PWM intake fans across the bottom/keyboard vents.
